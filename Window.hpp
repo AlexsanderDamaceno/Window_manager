@@ -50,8 +50,10 @@ public:
         SDL_RenderFillRect(renderer, &closeButtonRect);
     }
 
-    void handleMouseDown(int x, int y) {
+    void handleMouseDown(SDL_Event e) {
 
+      int x =  e.button.x;
+      int y =  e.button.y;
 
       bool has_selected_widget = false;
 
@@ -75,15 +77,26 @@ public:
           if (widget->getRect().contains(x - rect.getX(), y - rect.getY())) {
 
               selectedWidget = widget;
+
+
               has_selected_widget = true;
-              return;
+              break;
           }
+
       }
+
 
       if(!has_selected_widget)
       {
         selectedWidget = nullptr;
+      }else{
+
+        e.button.x -= rect.getX();
+        e.button.y -= rect.getY();
+        selectedWidget->handleEvent(e);
       }
+
+    //  selectedWidget->handleEvent(e);
     }
 
       // Check if the title bar is clicked for window dragging
@@ -95,7 +108,13 @@ public:
 
   }
 
- void  handleMouseMove(int x, int y) {
+ void  handleMouseMove(SDL_Event e)
+ {
+
+   int x = e.motion.x;
+   int y = e.motion.y;
+
+
     if (isResizing) {
         int newWidth = rect.getWidth();
         int newHeight = rect.getHeight();
@@ -119,6 +138,42 @@ public:
         rect = Rectangle(x, y, newWidth, newHeight);
     } else {
         // Handle other mouse move logic if resizing is not occurring
+
+
+        // pass mouse move event to widget
+
+        int x = e.button.x;
+        int y = e.button.y;
+
+
+        int is_widget_hovered = false;
+
+        for (Widget* widget : widgets)
+        {
+
+
+
+            if (widget->getRect().contains(x , y )) {
+              std::cout << "teste" << std::endl;
+
+            //    e.button.x = rect.getX();
+              //  e.button.y = rect.getY();
+
+            //    std::cout << "mouse x:" << x << "mouse y: " << y << "widget x:" << widget->getRect().getX() << std::endl;
+                HoveredWidget = widget;
+                is_widget_hovered = true;
+                widget->handleEvent(e);
+                break;
+            }
+
+        }
+
+        if(!is_widget_hovered and HoveredWidget){
+           HoveredWidget->MouseOut();
+
+           HoveredWidget = nullptr; 
+        }
+
     }
 
     return;
@@ -157,6 +212,7 @@ void handleMouseUp() {
 
 private:
 
-  Widget* selectedWidget = nullptr;
+  Widget * selectedWidget = nullptr;
+  Widget * HoveredWidget  = nullptr;
 
 };

@@ -19,6 +19,11 @@ public:
         }
     }
 
+    std::string GetText()
+    {
+        return text;
+    }
+
     void render(SDL_Renderer* renderer , int windowX , int windowY) override {
 
 

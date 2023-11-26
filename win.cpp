@@ -9,8 +9,11 @@
 
 #include "./Config.hpp"
 #include "./Rect.hpp"
+
 #include "./widgets/Widget.hpp"
 #include "./widgets/TextBox.hpp"
+#include "./widgets/Button.hpp"
+
 #include "./Taskbar.hpp"
 #include "./Window.hpp"
 
@@ -77,13 +80,48 @@ public:
        SDL_FreeSurface(backgroundSurface);
    }
 
+
+
     void run() {
         bool quit = false;
         SDL_Event e;
         Taskbar taskbar(renderer);
 
+
+
         Window window1(SCREEN_WIDTH / 2 - 200 ,  SCREEN_HEIGHT/2 - 800, 800, 600, {255, 255, 255, 255}, "Window 1");
-        TextBox textBox1(40, 50, 300, 40);
+        TextBox textBox1(40, 100, 300, 40);
+
+        Button  button1(60 , 300 , 50 , 50 , "click me");
+
+
+        int base_x = 60;
+
+        for(int i = 0; i < 5; i++)
+        {
+          Button  *button1 = new Button(base_x, 300 , 50 , 50 , "click me");
+
+
+
+          base_x += 80;
+
+          window1.addWidget(button1);
+        }
+
+/*
+        button1.setOnClick([&]() {
+
+          Window window1(0 ,  SCREEN_HEIGHT/2 - 800, 800, 600, {255, 255, 255, 255}, "Window 1");
+
+         if(textBox1.GetText() == "open")
+              windows.push_back(window1);
+
+        });
+        */
+
+        window1.addWidget(&button1);
+
+
         window1.addWidget(&textBox1);
 
         windows.push_back(window1);
@@ -108,14 +146,14 @@ public:
                     handleKeyDown(e);
                 } else if (e.type == SDL_MOUSEBUTTONDOWN) {
                     if (e.button.button == SDL_BUTTON_LEFT) {
-                        handleMouseDown(e.button.x, e.button.y);
+                        handleMouseDown(e);
                     }
                 } else if (e.type == SDL_MOUSEBUTTONUP) {
                     if (e.button.button == SDL_BUTTON_LEFT) {
                         handleMouseUp();
                     }
                 } else if (e.type == SDL_MOUSEMOTION) {
-                    handleMouseMove(e.motion.x, e.motion.y);
+                    handleMouseMove(e);
                 }
             }
 
@@ -142,8 +180,11 @@ private:
 
 
 
-    void handleMouseDown(int x, int y) {
+    void handleMouseDown(SDL_Event e) {
 
+
+    int x = e.button.x;
+    int y = e.button.y;
 
     bool has_selected_window = false;
 
@@ -190,7 +231,7 @@ private:
 
             if (window.getRect().contains(x, y))
             {
-                 window.handleMouseDown(x, y);
+                 window.handleMouseDown(e);
                  break;
             }
 
@@ -243,23 +284,42 @@ private:
     }
 
 
-    void handleMouseMove(int x, int y) {
+    void handleMouseMove(SDL_Event e) {
+
+           int x = e.motion.x;
+           int y = e.motion.y;
 
 
-           if(selectedWindow && selectedWindow->isResizing){
-                  selectedWindow->handleMouseMove(x ,y);
-                }else if (selectedWindow && selectedWindow->isDragging) {
+           if(selectedWindow && selectedWindow->isResizing)
+           {
+                  selectedWindow->handleMouseMove(e);
 
-        selectedWindow->updatePosition(x - offsetX, y - offsetY);
+          }else if (selectedWindow && selectedWindow->isDragging) {
 
-        // Update widget positions as well if needed
-        for (Widget* widget : selectedWindow->widgets) {
-            if (TextBox* textBox = dynamic_cast<TextBox*>(widget)) {
-               // textBox->updatePosition(selectedWindow->getRect().getX() + BORDER_SIZE,
-                  //                       selectedWindow->getRect().getY() + TITLE_BAR_HEIGHT + BORDER_SIZE);
-            }
-        }
-    }
+                 selectedWindow->updatePosition(x - offsetX, y - offsetY);
+
+          }else
+          {
+
+              int x = e.button.x;
+              int y = e.button.y;
+
+
+
+              for (auto& window : windows)
+              {
+
+                if(window.getRect().contains(x , y))
+                {
+
+                  e.button.x -= window.getRect().getX();
+                  e.button.y -= window.getRect().getY();
+                  window.handleMouseMove(e);
+                  break;
+                }
+              }
+          }
+
 
     }
 
@@ -304,6 +364,7 @@ private:
     std::vector<Window> windows;
 
     Widget *selectedwidget = nullptr;
+
 };
 
 int main(int argc, char* args[]) {
